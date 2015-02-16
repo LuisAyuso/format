@@ -31,38 +31,40 @@ namespace {
     template<unsigned Token, unsigned N, typename ...ARGS>
     bool validate(const char(&arr)[N], ARGS...args);
     
-    template<unsigned Token, unsigned N> constexpr
-    bool check_field(const char(&arr)[N], int x);
-    
-    template<unsigned Token, unsigned N, typename ...ARGS> constexpr
+    template<unsigned Token, unsigned N, typename ...ARGS>
     bool check_field(const char(&arr)[N], int x, ARGS...args);
   
+    template<unsigned Token, unsigned N, typename ...ARGS>
+    bool check_field(const char(&arr)[N], float x, ARGS...args);
+
+    template<unsigned Token, unsigned N, typename ...ARGS>
+    bool check_field(const char(&arr)[N], double x, ARGS...args);
+    
+    template<unsigned Token, unsigned N, typename ...ARGS>
+    bool check_field(const char(&arr)[N], const char *x, ARGS...args);
+        
+    template<unsigned Token, unsigned N>
+    bool check_field(const char(&arr)[N]);
+
+    
     /**
      * dispatcher, function templates do not accept partial spetialisation
      */
     template <unsigned Token, unsigned N>
     struct next{
+        static_assert(Token < N, "this dispatcher handles recursive case");
+        
         template<typename ...ARGS>
         bool advance(const char(&arr)[N], ARGS...args){
             return validate<Token>(arr, args...);
         }
         template<typename ...ARGS>
         bool consume(const char(&arr)[N], ARGS...args){
+            std::cout << "cacaca" << Token << std::endl;
             return check_field<Token>(arr, args...);
         }
     };
    
-    template<unsigned Token, unsigned N> constexpr
-    bool check_field(const char(&arr)[N], int x){
-        return  (nth_char(Token, arr) == 'd') && next<Token+1,N>().advance(arr);
-    }
-    
-    template<unsigned Token, unsigned N, typename ...ARGS> constexpr
-    bool check_field(const char(&arr)[N], int x, ARGS...args){
-        return  (nth_char(Token, arr) == 'd') && next<Token+1,N>().advance(arr, args...);
-    }
-
-    
     /**
      * dispatcher, base case
      */
@@ -78,6 +80,31 @@ namespace {
         }
     };
 
+    
+    template<unsigned Token, unsigned N, typename ...ARGS>
+    bool check_field(const char(&arr)[N], int x, ARGS...args){
+        return  (nth_char(Token, arr) == 'd')? validate<Token>(arr, args...): false;
+    }
+    template<unsigned Token, unsigned N, typename ...ARGS>
+    bool check_field(const char(&arr)[N], float x, ARGS...args){
+        return  (nth_char(Token, arr) == 'f')? validate<Token>(arr, args...): false;
+    }
+    template<unsigned Token, unsigned N, typename ...ARGS>
+    bool check_field(const char(&arr)[N], double x, ARGS...args){
+        return  (nth_char(Token, arr) == 'f')? validate<Token+1>(arr, args...): false;
+    }
+
+    template<unsigned Token, unsigned N, typename ...ARGS>
+    bool check_field(const char(&arr)[N], const char *x, ARGS...args){
+        std::cout << nth_char(Token, arr);
+        return  (nth_char(Token, arr) == 's')? validate<Token>(arr, args...): false;
+    }
+    template<unsigned Token, unsigned N>
+    bool check_field(const char(&arr)[N]){
+        std::cout << "empty"<< std::endl;
+        return false;
+    }
+
     /**
      * validate recursive function
      */
@@ -88,6 +115,7 @@ namespace {
         
         std::cout << Token << " " << N << " " << nth_char(Token, arr) << std::endl;
         if (nth_char(Token, arr) == '%'){
+            std::cout << "go!" << nth_char(Token+1, arr) << std::endl;
             return next<Token+1, N>().consume(arr, args...);
         }
         else{
@@ -124,5 +152,5 @@ namespace {
 
 
 int main(int argc, const char * argv[]) {
-    format("hello world")(6);
+    format("%d %f %s")("x");
 }
