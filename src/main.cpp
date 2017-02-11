@@ -6,11 +6,12 @@
 //  Copyright (c) 2015 Luis Ayuso. All rights reserved.
 //
 
-#include <iostream>
+#include <type_traits>
 
 #include "v2.h"
 
 using namespace format;
+
 
 int main(int argc, const char * argv[]) {
     
@@ -81,6 +82,12 @@ int main(int argc, const char * argv[]) {
         static_assert(get_specifier_after("%*0ld",1) == sk::Dec, "skip format");
         static_assert(get_specifier_after("%*.*d",1) == sk::FieldLen, "skip format");
         static_assert(get_specifier_after("%*.*d",3) == sk::Dec, "skip format");
+    }
+
+    // validate tuple
+    {
+        static_assert(validate<std::tuple<>>::fmt("hello"), "validate");
+        static_assert(validate<std::tuple<int>>::fmt("%d"), "validate");
     }
 
     return 0;

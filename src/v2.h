@@ -7,6 +7,8 @@
 //
 #pragma once
 
+#include <tuple>
+
 
 namespace format{
 namespace strutils{
@@ -116,11 +118,63 @@ namespace strutils{
                     sk::None;
 
     }
-    
+
 // ===============================================================
 //     code to generate the validation
 // ===============================================================
 
+    template<typename T>
+    void fail(T){
+        static_assert(std::is_same<T, int>::value, "");
+    }
+
+    template<size_t I>
+    using Idx = std::integral_constant<size_t, I>;
+
+    template <size_t N, size_t I=0>
+    struct indices{
+        using type = decltype( std::tuple_cat(std::tuple<Idx<I>>(), indices<N,I+1>::type() ));
+    };
+
+    template <size_t N>
+    struct indices<N,N>{
+        using type = std::tuple<>;
+    };
+
+    template<SpecifierKind K>
+    using Specifier = std::integral_constant<SpecifierKind, K>;
+
+    template<size_t N>
+    constexpr static decltype(auto) get_sp(const char (&arr)[N], size_t i){
+        return Specifier<SpecifierKind::None>{};
+    }
     
+    template<size_t FS, size_t AS, typename ARGS, size_t I=0, size_t J=0>
+    struct validate_aux{
+        template<size_t N>
+        constexpr static decltype(auto) fmt(const char (&arr)[N]) {
+            return 
+                // here, do the magic
+                // ...
+                validate_aux<N, AS, ARGS, I+1, J>::fmt(arr);
+        }
+    };
+
+    template<size_t FS, size_t AS, typename ARGS, size_t J>
+    struct validate_aux<FS,AS,ARGS, FS, J>{
+        template<size_t N>
+        constexpr static bool fmt(const char (&arr)[N]) {
+            return true;
+        }
+    };
+
+    template<typename ARGS>
+    struct validate{
+        template<size_t N>
+        constexpr static bool fmt(const char (&arr)[N]) {
+            return validate_aux<N, std::tuple_size<ARGS>::value, ARGS>::fmt(arr);
+        }
+    };
+
 
 } // namespace format
